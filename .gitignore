@@ -1,0 +1,14 @@
+/.vivado/
+*.jou
+*.log
+*.pb
+*.str
+*.wdb
+*.wcfg
+*.vcd
+*.zip
+/.Xil/
+/tb/renewal_maclane_expected.txt
+/tb/renewal_maclane_actual.txt
+__pycache__/
+*.pyc
