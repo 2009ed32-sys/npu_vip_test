@@ -56,9 +56,17 @@ foreach variable_name {PYTHONHOME PYTHONPATH} {
 }
 
 set python_path [find_python]
+
+# Step 1: Python 정답 생성기를 실행한다.
 puts "Generating independent MACLane answer file..."
 puts [exec $python_path $generator_path 2>@1]
 
+# Step 2: Python이 renewal_maclane_expected.txt에 정답을 저장한다.
+if {![file exists $expected_path]} {
+    error "Python did not create the expected file: $expected_path"
+}
+
+# Step 3: Vivado/XSim 프로젝트를 생성하고 renewal_vip_TB를 실행한다.
 file delete -force $project_dir
 create_project -force npu_vip_test $project_dir -part xc7z020clg400-1
 set_property target_language Verilog [current_project]
@@ -88,11 +96,13 @@ launch_simulation
 run all
 close_sim
 
+# Step 4: TB가 기록한 renewal_maclane_actual.txt를 확인한다.
 if {![file exists $actual_path]} {
     close_project
     error "Simulation did not create: $actual_path"
 }
 
+# Step 5: expected 파일과 actual 파일을 한 줄씩 비교한다.
 set expected_lines [read_nonempty_lines $expected_path]
 set actual_lines [read_nonempty_lines $actual_path]
 
