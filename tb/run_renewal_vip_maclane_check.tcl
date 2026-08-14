@@ -1,3 +1,10 @@
+# MACLane 검증 흐름:
+# 1. Python으로 정답을 생성한다.
+# 2. Python 결과를 renewal_maclane_expected.txt에 저장한다.
+# 3. Vivado/XSim으로 renewal_vip_TB를 실행한다.
+# 4. TB의 MACLane 출력을 renewal_maclane_actual.txt에 저장한다.
+# 5. Tcl이 expected 파일과 actual 파일을 한 줄씩 비교한다.
+
 set script_dir [file dirname [file normalize [info script]]]
 set repo_dir [file dirname $script_dir]
 set project_dir [file join $repo_dir .vivado]
