@@ -35,6 +35,8 @@ module CSC #(
     output logic [31:0] data_refill_position_base,
     output logic [31:0] data_refill_position_count,
     output logic        data_refill_last,
+    output logic        data_release_valid,
+    input  logic        data_release_ready,
 
     // CDMA weight chunk
     input  logic        weight_chunk_valid,
@@ -201,6 +203,8 @@ module CSC #(
     assign operation_done = scheduler_finished &&
                             !read_pending_q &&
                             (maclane_level == 0);
+    // Release data CDMA only after every scheduled operand has drained.
+    assign data_release_valid = operation_done;
 
     // Refill one CBUF-sized group of complete input positions.
     assign refill_position =
@@ -231,7 +235,7 @@ module CSC #(
                 end
             end
             S_WORK: begin
-                if (operation_done) begin
+                if (operation_done && data_release_ready) begin
                     n_state = S_DONE;
                 end
             end

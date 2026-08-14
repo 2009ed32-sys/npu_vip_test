@@ -156,6 +156,8 @@ module renewal #(
     logic [31:0] data_refill_position_base;
     logic [31:0] data_refill_position_count;
     logic        data_refill_last;
+    logic        data_release_valid;
+    logic        data_release_ready;
     logic        data_chunk_valid;
     logic [31:0] data_chunk_position_base;
     logic [31:0] data_chunk_position_count;
@@ -257,6 +259,8 @@ module renewal #(
         .data_refill_position_base(data_refill_position_base),
         .data_refill_position_count(data_refill_position_count),
         .data_refill_last(data_refill_last),
+        .data_release_valid(data_release_valid),
+        .data_release_ready(data_release_ready),
         .data_chunk_valid(data_chunk_valid),
         .data_chunk_position_base(data_chunk_position_base),
         .data_chunk_position_count(data_chunk_position_count),
@@ -376,6 +380,8 @@ module renewal #(
         .data_refill_position_base(data_refill_position_base),
         .data_refill_position_count(data_refill_position_count),
         .data_refill_last(data_refill_last),
+        .data_release_valid(data_release_valid),
+        .data_release_ready(data_release_ready),
         .weight_chunk_valid(weight_chunk_valid),
         .weight_chunk_word_base(weight_chunk_word_base),
         .weight_chunk_word_count(weight_chunk_word_count),

@@ -37,6 +37,9 @@ module CDMA_data_load #(
     input  logic [31:0] data_refill_position_count,
     input  logic        data_refill_last,
 
+    input  logic        data_release_valid,
+    output logic        data_release_ready,
+
     // Current CBUF chunk range in the input-position space.
     output logic        data_chunk_valid,
     output logic [31:0] data_chunk_position_base,
@@ -67,6 +70,7 @@ module CDMA_data_load #(
     logic        axi_req_fire;
     logic        axi_load_fire;
     logic        data_refill_fire;
+    logic        data_release_fire;
     logic        data_refill_command_valid;
     logic        data_lane_stall;
     logic [31:0] data_req_addr_recovery;//for error
@@ -111,6 +115,9 @@ module CDMA_data_load #(
     assign data_refill_ready =
         (p_data_state == S_REPEAT) && cbuf_ready;
     assign data_refill_fire = data_refill_valid && data_refill_ready;
+    // Keep CDMA available for backward refills until CSC releases the operation.
+    assign data_release_ready = (p_data_state == S_REPEAT);
+    assign data_release_fire = data_release_valid && data_release_ready;
 
     assign data_err = data_err_q || axi_data_err;// latch 1-cycle AXI error pulse
     assign cbuf_wr_count = data_load_burst_counter;
@@ -136,14 +143,15 @@ module CDMA_data_load #(
                 if (data_err) begin
                     n_data_state = S_ERR;
                 end else if (data_load_done && cbuf_wr_done) begin
-                    if (data_chunk_last) begin n_data_state = S_DONE; end
-                    else                      begin n_data_state = S_REPEAT; end
+                    n_data_state = S_REPEAT;
                 end
             end
             S_REPEAT: begin 
                 if (data_refill_fire) begin
                     if (data_refill_command_valid) begin n_data_state = S_CALC; end
                     else                           begin n_data_state = S_ERR; end
+                end else if (data_release_fire) begin
+                    n_data_state = S_DONE;
                 end
             end
             S_DONE: n_data_state = S_IDLE;

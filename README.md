@@ -48,7 +48,7 @@ Vivado IP output products와 simulation 결과는 저장소에 포함하지 않�
 64x64 data refill 시나리오는 Vivado Tcl console에서 저장소 루트를 현재 경로로 설정한 뒤 실행합니다.
 
 ```tcl
-source refill_64x64/tb/run_renewal_vip_refill_64x64_check.tcl
+source tb/run_renewal_vip_refill_64x64_check.tcl
 ```
 
 또는 PowerShell에서 실행합니다.
@@ -56,7 +56,7 @@ source refill_64x64/tb/run_renewal_vip_refill_64x64_check.tcl
 ```powershell
 & "C:\Xilinx\Vivado\2023.1\bin\vivado.bat" `
   -mode batch `
-  -source refill_64x64/tb/run_renewal_vip_refill_64x64_check.tcl
+  -source tb/run_renewal_vip_refill_64x64_check.tcl
 ```
 
 성공하면 TB 자체 검사와 독립 정답 비교 결과가 모두 출력됩니다.

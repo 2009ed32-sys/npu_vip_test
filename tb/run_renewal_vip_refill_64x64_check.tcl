@@ -6,8 +6,7 @@
 # 5. Compare all expected and actual packets line by line.
 
 set script_dir [file dirname [file normalize [info script]]]
-set scenario_dir [file dirname $script_dir]
-set repo_dir [file dirname $scenario_dir]
+set repo_dir [file dirname $script_dir]
 set project_dir [file join $repo_dir .vivado refill_64x64]
 set project_name npu_vip_refill_64x64
 set generator_path [file join $script_dir generate_renewal_vip_refill_64x64_expected.py]
@@ -70,18 +69,8 @@ create_project -force $project_name $project_dir -part xc7z020clg400-1
 set_property target_language Verilog [current_project]
 set_property simulator_language Mixed [current_project]
 
-# Keep the original repository RTL and replace only the files needed by refill64.
-set override_names {CSB.sv CDMA_data_load.sv CSC.sv renewal.sv}
-set rtl_files {}
-foreach rtl_file [glob -directory [file join $repo_dir rtl] *.sv] {
-    if {[lsearch -exact $override_names [file tail $rtl_file]] < 0} {
-        lappend rtl_files $rtl_file
-    }
-}
-foreach rtl_file [glob -directory [file join $scenario_dir rtl] *.sv] {
-    lappend rtl_files $rtl_file
-}
-add_files -norecurse $rtl_files
+# Refill64 behavior is part of the repository's primary RTL source set.
+add_files -norecurse [glob -directory [file join $repo_dir rtl] *.sv]
 
 set ip_files {}
 foreach ip_dir [glob -types d -directory [file join $repo_dir vivado ip] *] {

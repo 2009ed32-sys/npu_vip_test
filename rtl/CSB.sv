@@ -70,6 +70,7 @@ module csb #(
     logic        decoded_pointer;
     logic        decoded_status;
     logic [31:0] status_idx;
+    logic        transfer_fire;
     logic [31:0] op_enable_reg [0:1][0:2]; // group, 0: cdma, 1: csc, 2: cacc
     logic        producer_pointer_q;
     logic        consumer_pointer_q;
@@ -96,7 +97,7 @@ module csb #(
     always_comb begin
         n_state = S_IDLE;
         unique case(p_state)
-            S_IDLE:   if (PSELx) n_state = S_SETUP;
+            S_IDLE:   if (PSELx && !PENABLE) n_state = S_SETUP;
             S_SETUP: begin
                 if (!PSELx) begin
                     n_state = S_IDLE;
@@ -118,6 +119,8 @@ module csb #(
             default: begin n_state = S_IDLE; end
         endcase
     end
+
+    assign transfer_fire = (p_state == S_SETUP) && PSELx && PENABLE;
 
     assign consumer_advance_cond = (&consumer_busy_seen) && !cdma_status[consumer_pointer_q] && !csc_status[consumer_pointer_q] && !cacc_status[consumer_pointer_q];
 
@@ -188,28 +191,30 @@ module csb #(
 
     // APB response uses the current transfer signals so data is valid in ACCESS.
     always_comb begin
-        PREADY = PSELx;
+        PREADY = 1'b0;
         PRDATA = 32'd0;
         PSLVERR = 1'b0;
 
-        if (PSELx && !PWRITE && decoded_valid) begin
-            if (decoded_pointer) begin
-                PRDATA = {15'd0, consumer_pointer_q, 15'd0, producer_pointer_q};
-            end else if (decoded_op_enable) begin
-                PRDATA = op_enable_reg[producer_pointer_q][op_enable_idx];
-            end else if (decoded_status) begin
-                unique case (status_idx)
-                    32'd0: PRDATA = {30'd0, cdma_status};
-                    32'd1: PRDATA = {30'd0, csc_status};
-                    32'd2: PRDATA = {30'd0, cacc_status};
-                    default: PRDATA = 32'd0;
-                endcase
-            end else begin
-                PRDATA = slvreg[producer_pointer_q][decoded_idx];
-            end
-        end
+        if (transfer_fire) begin
+            PREADY = 1'b1;
 
-        if (PSELx && PENABLE && PREADY) begin
+            if (!PWRITE && decoded_valid) begin
+                if (decoded_pointer) begin
+                    PRDATA = {15'd0, consumer_pointer_q, 15'd0, producer_pointer_q};
+                end else if (decoded_op_enable) begin
+                    PRDATA = op_enable_reg[producer_pointer_q][op_enable_idx];
+                end else if (decoded_status) begin
+                    unique case (status_idx)
+                        32'd0: PRDATA = {30'd0, cdma_status};
+                        32'd1: PRDATA = {30'd0, csc_status};
+                        32'd2: PRDATA = {30'd0, cacc_status};
+                        default: PRDATA = 32'd0;
+                    endcase
+                end else begin
+                    PRDATA = slvreg[producer_pointer_q][decoded_idx];
+                end
+            end
+
             PSLVERR = !decoded_valid || (PWRITE && decoded_status);
         end
     end
@@ -254,7 +259,7 @@ module csb #(
                 op_enable_reg[consumer_pointer_q][1][0] <= 1'b0;
             end
 
-            if (PSELx && PENABLE && PREADY && PWRITE && decoded_valid) begin
+            if (transfer_fire && PWRITE && decoded_valid) begin
                 if (decoded_pointer) begin
                     producer_pointer_q <= PWDATA[0];
                 end else if (decoded_op_enable) begin
