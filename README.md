@@ -65,3 +65,36 @@ source tb/run_renewal_vip_maclane_check.tcl
 renewal_vip_TB PASSED: 5x5 DATA and 3x3 WEIGHT verified
 MACLane comparison PASSED: 81 entries matched
 ```
+
+## Simulation Result
+
+Vivado 2023.1 XSim에서 저장소의 Tcl 스크립트로 프로젝트와 IP output products를 새로 생성한 뒤 behavioral simulation을 수행했습니다.
+
+| 검증 항목 | 결과 |
+|---|---:|
+| CSB AXI4-Lite read/write response | PASS (`OKAY`) |
+| Data AXI read burst | PASS (25 bursts) |
+| Weight AXI read burst | PASS (9 bursts) |
+| AXI burst 속성 | PASS (`ARLEN=7`, `ARSIZE=4-byte`, `INCR`) |
+| MACLane backpressure payload 유지 | PASS |
+| MACLane tag/data/weight 자체 검사 | PASS (81 packets) |
+| Python 독립 정답과 RTL 출력 비교 | PASS (81/81 matched) |
+
+검증된 MACLane packet 수는 다음과 같이 계산됩니다.
+
+```text
+output positions = (5 - 3 + 1) x (5 - 3 + 1) = 3 x 3
+kernel positions = 3 x 3
+MACLane packets  = 3 x 3 x 3 x 3 = 81
+```
+
+마지막 실행은 simulation time `27910 ns`에 정상 종료됐습니다.
+
+```text
+[MACLANE PASS] packet=80 out=(2,2) kernel=(2,2) data_position=24
+renewal_vip_TB PASSED: 5x5 DATA and 3x3 WEIGHT verified
+Executing Axi4 End Of Simulation checks
+MACLane comparison PASSED: 81 entries matched
+```
+
+이 결과는 CDMA가 DDR에서 data와 weight를 읽고 CBUF에 저장한 뒤, CSC가 output/kernel 위치에 맞는 operand를 MACLane으로 배치하는 전단 데이터 경로를 검증한 것입니다. MAC 연산 결과와 CACC/SDP 출력은 현재 simulation 범위에 포함되지 않습니다.
