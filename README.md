@@ -24,7 +24,7 @@ Vivado AXI VIP를 사용해 `renewal` convolution front-end의 제어 및 memory
 - `maclane_ready=0`에서 payload가 유지되는 backpressure
 - Python 독립 정답 81개와 RTL 출력의 Tcl 비교
 
-현재 범위에는 MAC 연산, CACC 누산, SDP writeback, padding, multi-chunk refill 및 AXI error injection이 포함되지 않습니다.
+현재 범위에는 MAC 연산, CACC 누산, SDP writeback, padding, CBUF 다중 청크 동시 보존 및 AXI error injection이 포함되지 않습니다.
 
 ## Repository Layout
 
@@ -108,3 +108,18 @@ MACLane refill64 comparison PASSED: 4096/4096 entries matched
 ```
 
 이 테스트는 네 chunk의 forward/backward refill과 MACLane 배치를 빠르게 확인하기 위해 stride 32를 사용한 directed test입니다. Stride 1의 전체 33x33 output convolution 검증은 포함하지 않습니다.
+
+## Future CBUF Structure
+
+현재 CBUF는 한 번에 하나의 chunk만 보존하므로, 이전 chunk가 다시 필요하면 DDR에서 재요청해 CBUF를 덮어씁니다.
+
+```text
+현재: DDR -> CDMA -> CBUF single slot -> CSC -> MACLane
+
+향후: DDR -> CDMA -> CBUF slot 0 ─┐
+                         CBUF slot 1 ─┴-> CSC slot lookup -> MACLane
+```
+
+각 slot은 `valid`, `position_base`, `position_count` metadata를 가지며, CSC가 한 slot을 읽는 동안 CDMA가 다른 slot을 채우는 ping-pong 구조를 고려하고 있습니다. 이를 통해 이미 적재된 chunk를 재사용하고 `0,1,0,1,2,3,2,3`과 같은 반복 DDR refill을 줄이는 것이 목표입니다.
+
+현재는 slot 교체 정책, 동시 read/write 충돌 처리, handshake, BRAM 사용량과 partial sum 보존 구조가 최적화되지 않아 향후 개선 항목으로 남겨두었습니다.
